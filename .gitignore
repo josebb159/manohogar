@@ -1,0 +1,42 @@
+# Misc
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+.flutter-plugins
+
+# iOS
+ios/Flutter/Flutter.podspec
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/Flutter.xcworkspace/
+
+# Android
+**/local.properties
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+
+# Key files (opcional, si quieres que estén seguros)
+key.properties
+*.jks
