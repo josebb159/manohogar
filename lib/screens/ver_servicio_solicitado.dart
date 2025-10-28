@@ -173,13 +173,14 @@ class _VerServicioSolicitadoState extends State<VerServicioSolicitado> with Widg
                   );
                   return;
                 }
-
+                var id =  user['id'].toString();
                 // Llamar API
                 final uri = Uri.parse(
                     'https://manohogar.online/api/app_api.php?action=finalizar_servicio_cliente');
                 final response = await http.post(
                   uri,
                   body: json.encode({
+                    'id_usuario': id,
                     'id_servicio': idServicio,
                     'calificacion': calificacion,
                     'comentario': comentarioController.text,
@@ -322,7 +323,7 @@ class _VerServicioSolicitadoState extends State<VerServicioSolicitado> with Widg
     print('Especista $id_especialista');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Servicio Solicitado')),
+      appBar: AppBar(title: Text('Servicio Solicitado #${widget.idServicio}')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -627,7 +628,7 @@ class _VerServicioSolicitadoState extends State<VerServicioSolicitado> with Widg
                   ),
                 ),
                 icon: const Icon(Icons.local_offer),
-                label: const Text('Ofertar'),
+                label: const Text('Ver ferta'),
                 onPressed: botonesDeshabilitados
                     ? null
                     : () {

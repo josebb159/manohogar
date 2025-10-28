@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class MiCuentaScreen extends StatefulWidget {
   const MiCuentaScreen({Key? key}) : super(key: key);
@@ -12,12 +14,14 @@ class MiCuentaScreen extends StatefulWidget {
 
 class _MiCuentaScreenState extends State<MiCuentaScreen> {
   final _formKey = GlobalKey<FormState>();
-  TextEditingController _nombreController = TextEditingController();
-  TextEditingController _apellidoController = TextEditingController();
-  TextEditingController _telefonoController = TextEditingController();
-  TextEditingController _direccionController = TextEditingController();
+  final _nombreController = TextEditingController();
+  final _apellidoController = TextEditingController();
+  final _telefonoController = TextEditingController();
+  final _direccionController = TextEditingController();
 
   Map<String, dynamic>? user;
+  File? _imagenSeleccionada;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -36,6 +40,57 @@ class _MiCuentaScreenState extends State<MiCuentaScreen> {
         _telefonoController.text = user?['telefono'] ?? '';
         _direccionController.text = user?['direccion'] ?? '';
       });
+    }
+  }
+
+  Future<void> _seleccionarImagen() async {
+    final XFile? imagen = await _picker.pickImage(source: ImageSource.gallery);
+    if (imagen != null) {
+      setState(() {
+        _imagenSeleccionada = File(imagen.path);
+      });
+      await _subirImagen(File(imagen.path));
+    }
+  }
+
+  Future<void> _subirImagen(File imagen) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://manohogar.online/api/app_api.php?action=upload_user_photo'),
+      );
+
+      request.fields['id'] = user?['id'].toString() ?? '';
+      request.files.add(await http.MultipartFile.fromPath('foto', imagen.path));
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        final resBody = await response.stream.bytesToString();
+        final data = json.decode(resBody);
+
+        if (data['status'] == 'ok') {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          user?['foto'] = data['foto'];
+          prefs.setString('user', json.encode(user));
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Foto actualizada correctamente')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${data['message']}')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al subir la foto. Código: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al subir la imagen: $e')),
+      );
     }
   }
 
@@ -87,10 +142,7 @@ class _MiCuentaScreenState extends State<MiCuentaScreen> {
                   return;
                 }
 
-                final data = {
-                  'id': user?['id'].toString(),
-                  'password': nuevaPass
-                };
+                final data = {'id': user?['id'].toString(), 'password': nuevaPass};
 
                 try {
                   final response = await http.post(
@@ -125,7 +177,6 @@ class _MiCuentaScreenState extends State<MiCuentaScreen> {
     );
   }
 
-
   void _saveChanges() async {
     if (_formKey.currentState!.validate()) {
       final updatedData = {
@@ -138,7 +189,7 @@ class _MiCuentaScreenState extends State<MiCuentaScreen> {
 
       try {
         final response = await http.post(
-          Uri.parse('https://manohogar.online/api/app_api.php?action=edit_user'), // Cambia aquí por tu URL
+          Uri.parse('https://manohogar.online/api/app_api.php?action=edit_user'),
           headers: {"Content-Type": "application/json"},
           body: json.encode(updatedData),
         );
@@ -146,7 +197,6 @@ class _MiCuentaScreenState extends State<MiCuentaScreen> {
         if (response.statusCode == 200) {
           final responseData = json.decode(response.body);
           if (responseData['status'] == 'ok') {
-            // Actualizar SharedPreferences
             SharedPreferences prefs = await SharedPreferences.getInstance();
             user?['nombre'] = _nombreController.text;
             user?['apellido'] = _apellidoController.text;
@@ -155,7 +205,7 @@ class _MiCuentaScreenState extends State<MiCuentaScreen> {
             prefs.setString('user', json.encode(user));
 
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Datos actualizados correctamente')),
+              const SnackBar(content: Text('Datos actualizados correctamente')),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -164,11 +214,10 @@ class _MiCuentaScreenState extends State<MiCuentaScreen> {
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al conectar con el servidor')),
+            const SnackBar(content: Text('Error al conectar con el servidor')),
           );
         }
       } catch (e) {
-        print(e);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ocurrió un error: $e')),
         );
@@ -176,66 +225,130 @@ class _MiCuentaScreenState extends State<MiCuentaScreen> {
     }
   }
 
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      filled: true,
+      fillColor: Colors.grey.shade100,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final String urlFoto = user?['foto'] != null && user!['foto'] != ''
+        ? 'https://manohogar.online/assets/upload/usuario/${user!['foto']}'
+        : 'https://manohogar.online/assets/upload/usuario/default.jpg';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Cuenta'),
+        centerTitle: true,
       ),
       body: user == null
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
-        padding: const EdgeInsets.all(16.0),
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: Column(
             children: [
-              TextFormField(
-                initialValue: user?['email'] ?? '',
-                decoration: InputDecoration(labelText: 'Correo'),
-                enabled: false,
-              ),
-              TextFormField(
-                controller: _nombreController,
-                decoration: InputDecoration(labelText: 'Nombre'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingresa tu nombre';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _apellidoController,
-                decoration: InputDecoration(labelText: 'Apellido'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingresa tu apellido';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _telefonoController,
-                decoration: InputDecoration(labelText: 'Teléfono'),
-              ),
-              TextFormField(
-                controller: _direccionController,
-                decoration: InputDecoration(labelText: 'Dirección'),
-              ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  _mostrarDialogoCambioPassword(context);
-                },
-                child: const Text(
-                  'Cambiar contraseña',
-                  style: TextStyle(color: Color(0xFF0090FF)),
+              Center(
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 60,
+                      backgroundImage: _imagenSeleccionada != null
+                          ? FileImage(_imagenSeleccionada!)
+                          : NetworkImage(urlFoto) as ImageProvider,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: InkWell(
+                        onTap: _seleccionarImagen,
+                        child: const CircleAvatar(
+                          backgroundColor: Colors.blue,
+                          radius: 22,
+                          child: Icon(Icons.camera_alt, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              ElevatedButton(
-                onPressed: _saveChanges,
-                child: const Text('Guardar cambios'),
+              const SizedBox(height: 30),
+              TextFormField(
+                initialValue: user?['email'] ?? '',
+                decoration: _inputDecoration('Correo'),
+                enabled: false,
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _nombreController,
+                decoration: _inputDecoration('Nombre'),
+                validator: (v) => v == null || v.isEmpty ? 'Ingrese su nombre' : null,
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _apellidoController,
+                decoration: _inputDecoration('Apellido'),
+                validator: (v) => v == null || v.isEmpty ? 'Ingrese su apellido' : null,
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _telefonoController,
+                keyboardType: TextInputType.number,
+                maxLength: 10,
+                decoration: _inputDecoration('Teléfono').copyWith(counterText: ''),
+                onChanged: (value) {
+                  if (!RegExp(r'^[0-9]*$').hasMatch(value)) {
+                    _telefonoController.text = value.replaceAll(RegExp(r'[^0-9]'), '');
+                    _telefonoController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: _telefonoController.text.length),
+                    );
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Ingrese un número de teléfono';
+                  }
+                  if (value.length != 10) {
+                    return 'Debe tener 10 dígitos';
+                  }
+                  if (!value.startsWith('3')) {
+                    return 'Debe iniciar con 3 (celular colombiano)';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _direccionController,
+                decoration: _inputDecoration('Dirección'),
+              ),
+              const SizedBox(height: 25),
+              TextButton(
+                onPressed: () => _mostrarDialogoCambioPassword(context),
+                child: const Text(
+                  'Cambiar contraseña',
+                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) _saveChanges();
+                },
+                icon: const Icon(Icons.save),
+                label: const Text('Guardar cambios'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ],
           ),

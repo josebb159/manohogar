@@ -9,6 +9,7 @@
   import 'package:shared_preferences/shared_preferences.dart';
   import 'package:firebase_core/firebase_core.dart';
   import 'package:firebase_messaging/firebase_messaging.dart';
+  import 'ver_servicio_solicitado.dart';
 
   class HomeScreen extends StatefulWidget {
     const HomeScreen({Key? key}) : super(key: key);
@@ -257,6 +258,7 @@
         final result = json.decode(responseData.body);
 
         if (result['status'] == 'ok') {
+          final String idServicio = result['id_servicio'].toString();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -281,6 +283,14 @@
 
             // 👇 Vuelve a traer datos frescos desde el backend
             _fetchCategories();
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VerServicioSolicitado(
+                    idServicio: idServicio, // ← Aquí se pasa el valor real del backend
+                  ),
+                ),
+            );
           }
         } else {
           throw Exception(result['message'] ?? 'Error en respuesta');
@@ -450,20 +460,27 @@
       return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.orange,
-          title: Text('ManoHogar', style: GoogleFonts.poppins()),
+          title: Text('Manohogar', style: GoogleFonts.poppins()),
           actions: [
-
+            IconButton(
+              icon: const Icon(Icons.notifications, color: Colors.black),
+              onPressed: () {
+                Navigator.pushNamed(context, '/notificaciones');
+              },
+            ),
           ],
         ),
         drawer: Drawer(
           child: ListView(
             children: [
-              UserAccountsDrawerHeader(
+                UserAccountsDrawerHeader(
                 accountName: Text(user['nombre'] ?? 'Usuario'),
                 accountEmail: Text(user['correo'] ?? ''),
-                currentAccountPicture: const CircleAvatar(
+                currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.orange,
-                  child: Icon(Icons.person, color: Colors.white),
+                  backgroundImage: (user['foto'] != null && user['foto'].toString().isNotEmpty)
+                      ? NetworkImage('https://manohogar.online/assets/upload/usuario/${user['foto']}')
+                      : const AssetImage('assets/no_user.png') as ImageProvider, // 👈 imagen por defecto
                 ),
               ),
               ListTile(
@@ -736,8 +753,9 @@
                     value == null || value.isEmpty ? 'Seleccione el tiempo' : null,
                   ),
                   const SizedBox(height: 16),
-  
+
                   DropdownButtonFormField<String>(
+                    isExpanded: true, // 🔥 Esto hace que el dropdown use todo el ancho disponible
                     decoration: const InputDecoration(
                       labelText: '¿Para cuándo necesita el servicio?',
                       border: OutlineInputBorder(),
@@ -746,7 +764,10 @@
                     items: opcionesTiempo.map((opcion) {
                       return DropdownMenuItem<String>(
                         value: opcion['id'],
-                        child: Text(opcion['label']!),
+                        child: Text(
+                          opcion['label']!,
+                          overflow: TextOverflow.ellipsis, // 🔥 Evita desbordamiento de texto largo
+                        ),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -756,6 +777,7 @@
                     },
                     validator: (value) => value == null ? 'Seleccione una opción' : null,
                   ),
+
                   const SizedBox(height: 16),
                   
   
@@ -826,6 +848,7 @@
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                     child: Text('Enviar Solicitud', style: GoogleFonts.poppins()),
                   ),
+                  const SizedBox(height: 24),const SizedBox(height: 24),
                 ],
               ),
             ),

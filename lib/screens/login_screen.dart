@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // Realizar la solicitud a la API
       final response = await http.post(
-        Uri.parse('https://manohogar.online/api/app_api.php?action=login'),
+        Uri.parse('https://manohogar.online/api/app_api.php?action=Login_no_uid'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

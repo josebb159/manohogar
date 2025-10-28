@@ -1,0 +1,76 @@
+{
+  "project_info": {
+    "project_number": "665768775783",
+    "project_id": "test-8b78f",
+    "storage_bucket": "test-8b78f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665768775783:android:7e67059002d1d6d03604c2",
+        "android_client_info": {
+          "package_name": "com.example.lavadora_app23"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "665768775783-6jcbtb06ei1m34vag9hbvoro4ucl0gt4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.lavadora_app23",
+            "certificate_hash": "3db3129212ca54bd1c0aeffaa9756e83d88f7f66"
+          }
+        },
+        {
+          "client_id": "665768775783-p4lujr339f2qelgk6tb6cegqljv8n27p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCY4AfzLLnvTqXgxL8Ll00gsb0JbWKl6EU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "665768775783-p4lujr339f2qelgk6tb6cegqljv8n27p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665768775783:android:955f5449f46fbe333604c2",
+        "android_client_info": {
+          "package_name": "com.manohogar.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "665768775783-p4lujr339f2qelgk6tb6cegqljv8n27p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCY4AfzLLnvTqXgxL8Ll00gsb0JbWKl6EU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "665768775783-p4lujr339f2qelgk6tb6cegqljv8n27p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

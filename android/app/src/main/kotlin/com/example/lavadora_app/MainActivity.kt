@@ -1,4 +1,4 @@
-package com.example.lavadora_app
+package com.manohogar_app.app
 
 import io.flutter.embedding.android.FlutterActivity
 

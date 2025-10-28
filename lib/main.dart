@@ -18,6 +18,7 @@ import 'screens/mis_servicios_screen_specialista.dart';
 import 'screens/especialista_screed.dart';
 import 'screens/mis_descuentos_screen.dart';
 import 'screens/oferta.dart';
+import 'screens/notificaciones_screed.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/chat_suport_screen.dart';
 import 'dart:convert';
@@ -101,7 +102,7 @@ Future<void> main() async {
   await FirebaseMessaging.instance.requestPermission();
 
   // Inicializar notificaciones locales
-  const androidInitSettings = AndroidInitializationSettings('ic_notification');
+  const androidInitSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
   const initSettings = InitializationSettings(android: androidInitSettings);
 
   await flutterLocalNotificationsPlugin.initialize(
@@ -298,6 +299,7 @@ class MyApp extends StatelessWidget {
         '/mis_servicios_especialistas': (context) => const MisServiciosEspecialistaScreen(),
         '/mis_descuentos': (context) => const MisDescuentosScreen(),
         '/chat_suport': (context) => const ChatScreenSupport(),
+        '/notificaciones': (context) => const NotificacionesScreen(),
 
 
 

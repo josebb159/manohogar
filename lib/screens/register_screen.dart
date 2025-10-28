@@ -216,11 +216,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // TELEFONO
                 TextField(
                   controller: phoneController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 10, // 📱 Los números colombianos tienen 10 dígitos
                   decoration: InputDecoration(
                     labelText: 'Teléfono',
+                    counterText: '', // Oculta el contador de caracteres
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
+                  onChanged: (value) {
+                    // Solo permitir números
+                    if (!RegExp(r'^[0-9]*$').hasMatch(value)) {
+                      phoneController.text = value.replaceAll(RegExp(r'[^0-9]'), '');
+                      phoneController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: phoneController.text.length),
+                      );
+                    }
+                  },
                 ),
+
                 const SizedBox(height: 20),
 
                 // DIRECCION
@@ -237,6 +250,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
+                  enabled: !_isGoogleLogin, // 🔒 Bloquea el campo si es login con Google
                   decoration: InputDecoration(
                     labelText: 'Correo electrónico',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

@@ -14,7 +14,20 @@ class MisServiciosEspecialistaScreen extends StatefulWidget {
 class _MisServiciosEspecialistaScreenState extends State<MisServiciosEspecialistaScreen> {
   Map<String, dynamic>? user;
   List<dynamic> servicios = [];
+  List<dynamic> serviciosFiltrados = [];
   bool cargando = true;
+
+  String estadoSeleccionado = 'Todos';
+
+  final Map<String, String> estados = {
+    'Todos': 'Todos',
+    '0': 'Pendiente',
+    '1': 'Aceptado',
+    '5': 'En camino',
+    '2': 'En proceso',
+    '3': 'Finalizado',
+    '4': 'Cancelado',
+  };
 
   String _getEstadoServicio(dynamic estado) {
     switch (estado.toString()) {
@@ -40,7 +53,6 @@ class _MisServiciosEspecialistaScreenState extends State<MisServiciosEspecialist
     super.initState();
     _loadUserData();
   }
-
 
   Future<void> _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -72,7 +84,7 @@ class _MisServiciosEspecialistaScreenState extends State<MisServiciosEspecialist
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print("Respuesta mis_servicios: $data");
+      print("Respuesta mis_servicios_especialista: $data");
 
       if (data['status'] == 'ok') {
         setState(() {
@@ -81,6 +93,7 @@ class _MisServiciosEspecialistaScreenState extends State<MisServiciosEspecialist
           } else {
             servicios = [data['servicio']];
           }
+          serviciosFiltrados = List.from(servicios);
           cargando = false;
         });
       } else {
@@ -95,6 +108,19 @@ class _MisServiciosEspecialistaScreenState extends State<MisServiciosEspecialist
         const SnackBar(content: Text('Error de conexión')),
       );
     }
+  }
+
+  void _filtrarServicios(String estado) {
+    setState(() {
+      estadoSeleccionado = estado;
+      if (estado == 'Todos') {
+        serviciosFiltrados = List.from(servicios);
+      } else {
+        serviciosFiltrados = servicios
+            .where((s) => s['estado_servicio'].toString() == estado)
+            .toList();
+      }
+    });
   }
 
   Widget _buildCalificacion(dynamic calificacion) {
@@ -117,7 +143,6 @@ class _MisServiciosEspecialistaScreenState extends State<MisServiciosEspecialist
       ),
     );
   }
-
 
   Widget _buildDetalle(String detalle) {
     const maxLength = 60;
@@ -164,60 +189,94 @@ class _MisServiciosEspecialistaScreenState extends State<MisServiciosEspecialist
           ? const Center(child: CircularProgressIndicator())
           : servicios.isEmpty
           ? const Center(child: Text("No tienes servicios"))
-          : ListView.builder(
-        itemCount: servicios.length,
-        itemBuilder: (context, index) {
-          final servicio = servicios[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 3,
-            child: ListTile(
-              leading: servicio['foto'] != null && servicio['foto'] != ""
-                  ? ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  servicio['foto'],
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.image_not_supported),
+          : Column(
+        children: [
+          Padding(
+            padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: DropdownButtonFormField<String>(
+              value: estadoSeleccionado,
+              decoration: InputDecoration(
+                labelText: "Filtrar por estado",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              )
-                  : const Icon(Icons.home_repair_service, size: 40, color: Colors.blue),
-              title: Text(servicio['categoria'] ?? 'Servicio sin título'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDetalle(servicio['detalle'] ?? ''),
-                  const SizedBox(height: 4),
-                  _buildCalificacion(servicio['calificacion_especialista']),
-              const SizedBox(height: 4),
-              Text(
-                "Estado: ${_getEstadoServicio(servicio['estado_servicio'])}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                )),
-                ],
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 10),
               ),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => VerServicioSolicitadoEspecialista(
-                      idServicio: servicio['id_servicios'].toString(),
+              items: estados.entries
+                  .map((e) => DropdownMenuItem<String>(
+                value: e.key,
+                child: Text(e.value),
+              ))
+                  .toList(),
+              onChanged: (valor) {
+                if (valor != null) _filtrarServicios(valor);
+              },
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: serviciosFiltrados.length,
+              itemBuilder: (context, index) {
+                final servicio = serviciosFiltrados[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 3,
+                  child: ListTile(
+                    leading: servicio['foto'] != null &&
+                        servicio['foto'] != ""
+                        ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        servicio['foto'],
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.image_not_supported),
+                      ),
+                    )
+                        : const Icon(Icons.home_repair_service,
+                        size: 40, color: Colors.blue),
+                    title: Text(servicio['categoria'] ?? 'Servicio sin título'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetalle(servicio['detalle'] ?? ''),
+                        const SizedBox(height: 4),
+                        _buildCalificacion(servicio['calificacion_especialista']),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Estado: ${_getEstadoServicio(servicio['estado_servicio'])}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
                     ),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VerServicioSolicitadoEspecialista(
+                            idServicio: servicio['id_servicios'].toString(),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

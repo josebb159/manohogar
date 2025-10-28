@@ -678,7 +678,7 @@ class _VerServicioSolicitadoEspecialistaState
 
       idspecialista = servicio!['id_especialista'] ?? '0';
     return Scaffold(
-      appBar: AppBar(title: const Text('Servicio Solicitado')),
+      appBar: AppBar(title: Text('Servicio Solicitado #' + widget.idServicio)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1037,14 +1037,15 @@ class _VerServicioSolicitadoEspecialistaState
 
             const SizedBox(height: 30),
 
-            /// Botones
-            Row(
+            /// Botones organizados y alineados
+            Column(
               children: [
-                const SizedBox(width: 12),
+                const SizedBox(height: 12),
 
-                // Botón Aceptar
-                if (id_especialista == '0')
-                  Expanded(
+                // ======== ESTADO: SIN ASIGNAR (id_especialista == 0) ========
+                if (id_especialista == '0') ...[
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
@@ -1053,96 +1054,124 @@ class _VerServicioSolicitadoEspecialistaState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      icon: const Icon(Icons.check),
-                      label: const Text('Aceptar'),
+                      icon: const Icon(Icons.check, color: Colors.white),
+                      label: const Text('Aceptar',
+                          style: TextStyle(fontSize: 16, color: Colors.white)),
                       onPressed: botonesDeshabilitados
                           ? null
                           : () => enviarAccion('aceptar_servicio'),
                     ),
                   ),
+                ],
 
-                // Botón En camino
-                if (estado_servicio == '1')
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                    icon: const Icon(Icons.check),
-                    label: const Text('En camino'),
-                    onPressed: () {
-                      enviarAccion('servicio_a_la_ubicacion');
-                    },
-                  ),
-
-                // Botón En proceso
-                if (estado_servicio == '5')
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                    icon: const Icon(Icons.check),
-                    label: const Text('En proceso'),
-                    onPressed: () {
-                      enviarAccion('realizado_servicio');
-                    },
-                  ),
-
-                // Botón Finalizar servicio
-                if (estado_servicio == '2')
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                    icon: const Icon(Icons.check),
-                    label: const Text('Finalizar servicio'),
-                    onPressed: () {
-                      int idServicio = int.parse(widget.idServicio.toString());
-                      finalizar(context, idServicio);
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            estado_servicio == '0'
-                ? Center(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.local_offer),
-                label: const Text('Ofertar'),
-                onPressed: botonesDeshabilitados
-                    ? null
-                    : () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CronologiaOfertaPage(
-                        idServicio: int.parse(widget.idServicio),  // servicio actual
-                        idUsuario: int.parse(user['id']),          // cliente solicitante
-                        idDomiciliario: int.parse(idspecialista),  // especialista asignado
-                        remitente: "cliente",                     // o "especialista"
+                // ======== ESTADO: 0 → OFERTAR ========
+                if (estado_servicio == '0') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      icon: const Icon(Icons.local_offer, color: Colors.white),
+                      label: const Text('Ver oferta',
+                          style: TextStyle(fontSize: 16, color: Colors.white)),
+                      onPressed: botonesDeshabilitados
+                          ? null
+                          : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CronologiaOfertaPage(
+                              idServicio: int.parse(widget.idServicio),
+                              idUsuario: int.parse(user['id']),
+                              idDomiciliario: int.parse(idspecialista),
+                              remitente: "cliente",
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-            )
-                : const SizedBox.shrink(),
+                  ),
+                ],
 
+                // ======== ESTADO: 1 → EN CAMINO ========
+                if (estado_servicio == '1') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.directions_walk, color: Colors.white),
+                      label: const Text('En camino',
+                          style: TextStyle(fontSize: 16, color: Colors.white)),
+                      onPressed: () => enviarAccion('servicio_a_la_ubicacion'),
+                    ),
+                  ),
+                ],
+
+                // ======== ESTADO: 5 → EN PROCESO ========
+                if (estado_servicio == '5') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.build, color: Colors.white),
+                      label: const Text('En proceso',
+                          style: TextStyle(fontSize: 16, color: Colors.white)),
+                      onPressed: () => enviarAccion('realizado_servicio'),
+                    ),
+                  ),
+                ],
+
+                // ======== ESTADO: 2 → FINALIZAR SERVICIO ========
+                if (estado_servicio == '2') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.check_circle, color: Colors.white),
+                      label: const Text('Finalizar servicio',
+                          style: TextStyle(fontSize: 16, color: Colors.white)),
+                      onPressed: () {
+                        int idServicio = int.parse(widget.idServicio.toString());
+                        finalizar(context, idServicio);
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            )
+,
 
             const SizedBox(height: 12),
 
             /// Ir a ubicación
-            if (lat != null && lng != null)
+            if (lat != null && lng != null  && (estado_servicio==1 ||estado_servicio==2 || estado_servicio==5 ))
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(

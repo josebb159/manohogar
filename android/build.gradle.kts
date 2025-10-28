@@ -1,6 +1,13 @@
+// Archivo: android/build.gradle.kts
+
+plugins {
+    id("org.jetbrains.kotlin.android") apply false
+    id("dev.flutter.flutter-gradle-plugin") apply false
+}
+
 buildscript {
     repositories {
-        google()           // 👈 Para que encuentre com.google.gms:google-services
+        google()
         mavenCentral()
     }
     dependencies {
@@ -22,6 +29,7 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }

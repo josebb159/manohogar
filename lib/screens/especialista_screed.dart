@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'RecargaScreen.dart';
 
 class EspecialistaDetallePage extends StatefulWidget {
   const EspecialistaDetallePage({Key? key}) : super(key: key);
@@ -12,51 +13,22 @@ class EspecialistaDetallePage extends StatefulWidget {
 }
 
 class _EspecialistaDetallePageState extends State<EspecialistaDetallePage> {
-  List<dynamic> especialistas = [];
+  Map<String, dynamic>? especialista;
   bool isLoading = true;
   Map<String, dynamic>? user;
-
-  // 🔹 Mapa de íconos personalizados
-  final Map<String, IconData> fieldIcons = {
-    "nombre_completo": Icons.badge,
-    "telefono": Icons.phone,
-    "correo": Icons.email,
-    "categories_selected": Icons.work_outline,
-    "anio_experiencia": Icons.timeline,
-    "metodos_pago": Icons.payment,
-    "cartera": Icons.account_balance_wallet,
-    "ciudad": Icons.location_city,
-    "nacionalidad": Icons.flag,
-    "cedula": Icons.credit_card,
-    "aprobado": Icons.verified,
-    "fecha_registro": Icons.calendar_today,
-    "fecha_actualizacion": Icons.update,
-    "estado": Icons.info,
-    "latitud": Icons.location_on,
-    "longitud": Icons.location_on,
-  };
 
   Future<void> _getInfoEspecialista() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userData = prefs.getString('user');
 
-    print("📦 Datos guardados en SharedPreferences: $userData");
-
-    if (userData != null) {
-      final userMap = json.decode(userData);
-      print("👤 UserMap decodificado: $userMap");
-
-      setState(() {
-        user = userMap;
-      });
-    } else {
+    if (userData == null) {
       print("⚠️ No se encontró información del usuario en SharedPreferences");
       return;
     }
 
-    try {
-      print("➡️ Enviando request con user_id: ${user!['id']}");
+    user = json.decode(userData);
 
+    try {
       final res = await http.post(
         Uri.parse(
             'https://manohogar.online/api/app_api.php?action=getInfoEspecialista'),
@@ -64,33 +36,22 @@ class _EspecialistaDetallePageState extends State<EspecialistaDetallePage> {
         body: json.encode({'user_id': user!['id'].toString()}),
       );
 
-      print("📡 Status Code: ${res.statusCode}");
-      print("📥 Response Body: ${res.body}");
-
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        print("✅ JSON decodificado: $data");
-
         if (data['status'] == 'ok') {
           setState(() {
-            especialistas = [data['datos']];
+            especialista = data['datos'];
             isLoading = false;
           });
-          print("🎯 Especialistas cargados: ${especialistas.length}");
         } else {
-          setState(() {
-            isLoading = false;
-          });
+          setState(() => isLoading = false);
         }
       } else {
         throw Exception("Error en la petición: ${res.statusCode}");
       }
-    } catch (e, stacktrace) {
+    } catch (e) {
       print("❌ Excepción: $e");
-      print("📌 StackTrace: $stacktrace");
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 
@@ -105,140 +66,202 @@ class _EspecialistaDetallePageState extends State<EspecialistaDetallePage> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Perfil del Especialista"),
-        centerTitle: true,
+        backgroundColor: Colors.white,
         elevation: 0,
-        backgroundColor: Colors.deepOrange,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.deepOrange),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Perfil del especialista",
+          style: TextStyle(color: Colors.black),
+        ),
+        centerTitle: true,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : especialistas.isEmpty
-          ? const Center(child: Text("No se encontraron especialistas"))
-          : ListView.builder(
+          : especialista == null
+          ? const Center(child: Text("No se encontró información"))
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        itemCount: especialistas.length,
-        itemBuilder: (context, index) {
-          final esp = especialistas[index];
-
-          return Card(
-            margin: const EdgeInsets.only(bottom: 20),
-            elevation: 5,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 👋 Nombre
+            Text(
+              "!Hola, ${especialista!['nombre_completo'] ?? 'Usuario'}!",
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 20),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 📌 Foto principal
-                  if (esp["foto"] != null &&
-                      esp["foto"].toString().isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        esp["foto"],
-                        height: 220,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder:
-                            (context, error, stackTrace) =>
-                        const Icon(Icons.broken_image,
-                            size: 100),
-                      ),
-                    ),
+            const SizedBox(height: 16),
 
-                  const SizedBox(height: 20),
-
-                  // 📌 Datos en lista
-                  Column(
-                    children: esp.entries.map<Widget>((entry) {
-                      final key = entry.key;
-                      final value = entry.value;
-
-                      // Saltamos imágenes que ya mostramos arriba
-                      if (key == "foto" ||
-                          key == "antecedentes" ||
-                          key == "cedula_frontal" ||
-                          key == "cedula_trasera") {
-                        return const SizedBox.shrink();
-                      }
-
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            fieldIcons[key] ??
-                                Icons.label_outline, // 🔹 ícono dinámico
-                            color: Colors.deepOrange,
-                          ),
-                          title: Text(
-                            key.replaceAll("_", " "),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16),
-                          ),
-                          subtitle: Text(
-                            value?.toString() ?? "N/A",
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // 📌 Galería de imágenes (antecedentes / cédulas)
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+            // 💰 Saldo cartera
+            Container(
+              width: MediaQuery.of(context).size.width, // 🔹 Usa todo el ancho disponible
+              margin: const EdgeInsets.symmetric(horizontal: 4), // 🔹 Pequeño margen a los lados
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
                     children: [
-                      if (esp["antecedentes"] != null)
-                        _buildImageTile(
-                            "Antecedentes", esp["antecedentes"]),
-                      if (esp["cedula_frontal"] != null)
-                        _buildImageTile(
-                            "Cédula frontal", esp["cedula_frontal"]),
-                      if (esp["cedula_trasera"] != null)
-                        _buildImageTile(
-                            "Cédula trasera", esp["cedula_trasera"]),
+                      const Icon(Icons.account_balance_wallet,
+                          color: Colors.orange, size: 40),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Saldo cartera",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "COL ${especialista!['monedero'] ?? '0'}",
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RecargaScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepOrange,
+                          padding:
+                          const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          "Recargar",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
+            )
+,
+
+            const SizedBox(height: 20),
+
+            // 📊 Estadísticas simuladas
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatCard(especialista!['ingreso']?.toString() ?? "0 COP", "Ingresos",
+                    Colors.green.shade100, Colors.green),
+                _buildStatCard(especialista!['total_servicios']?.toString() ?? "0", "Trabajos",
+                    Colors.blue.shade100, Colors.blue),
+                _buildStatCard(
+                  especialista!['calificacion']?.toString() ?? "0",
+                  "Calificación",
+                  Colors.amber.shade100,
+                  Colors.amber[800]!,
+                ),
+              ],
             ),
-          );
-        },
+
+            const SizedBox(height: 20),
+
+            // 🧩 Categorías
+            _buildInfoSection(
+              title: "Mis Categorías",
+              content:
+              (especialista!['categories_selected'] ?? '')
+                  .toString()
+                  .split(',')
+                  .join('   '),
+            ),
+
+            // 💳 Métodos de pago
+            _buildInfoSection(
+              title: "Métodos de pago recibido",
+              content:
+              (especialista!['metodos_pago'] ?? '')
+                  .toString()
+                  .split(',')
+                  .join('   '),
+            ),
+
+            // 🌍 Nacionalidad y ciudad
+            _buildInfoSection(
+              title: "Nacionalidad - Ciudad",
+              content:
+              "${especialista!['nacionalidad'] ?? ''}   ${especialista!['ciudad'] ?? ''}",
+            ),
+
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }
 
-  // 🔹 Widget helper para mostrar imágenes con título
-  Widget _buildImageTile(String title, String url) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.network(
-            url,
-            height: 140,
-            width: 140,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
-            const Icon(Icons.broken_image, size: 60),
-          ),
+  Widget _buildStatCard(
+      String value, String label, Color bgColor, Color textColor) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
         ),
-      ],
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                  color: textColor, fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(label,
+                style: TextStyle(
+                    color: Colors.black54, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection({required String title, required String content}) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFE0B2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style:
+              const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 4),
+          Text(
+            content,
+            style: const TextStyle(
+                color: Colors.deepOrange,
+                fontSize: 15,
+                fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
     );
   }
 }

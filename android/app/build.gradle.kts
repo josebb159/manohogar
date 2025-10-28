@@ -1,65 +1,80 @@
-plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")
-}
+// Archivo: android/app/build.gradle.kts
 
 import java.util.Properties
-        import java.io.FileInputStream
+import java.io.FileInputStream
+import java.io.File
 
-        android {
-            namespace = "com.example.lavadora_app"
-            compileSdk = flutter.compileSdkVersion
-            ndkVersion = flutter.ndkVersion
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
+    id("dev.flutter.flutter-gradle-plugin")
+}
 
-            compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_11
-                targetCompatibility = JavaVersion.VERSION_11
-                isCoreLibraryDesugaringEnabled = true
+android {
+    namespace = "com.manohogar_app.app"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.manohogar_app.app"
+        minSdk = flutter.minSdkVersion
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.1"
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystorePropertiesFile = rootProject.file("key.properties")
+            val keystoreProperties = Properties()
+            if (keystorePropertiesFile.exists()) {
+                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
             }
 
-            kotlinOptions {
-                jvmTarget = JavaVersion.VERSION_11.toString()
-            }
-
-            defaultConfig {
-                applicationId = "com.example.lavadora_app23"
-                minSdk = flutter.minSdkVersion
-                targetSdk = flutter.targetSdkVersion
-                versionCode = flutter.versionCode
-                versionName = flutter.versionName
-            }
-
-            signingConfigs {
-                create("release") {
-                    val keystoreProperties = Properties()
-                    val keystorePropertiesFile = rootProject.file("key.properties")
-                    if (keystorePropertiesFile.exists()) {
-                        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-                    }
-
-                    keyAlias = keystoreProperties["keyAlias"] as String?
-                    keyPassword = keystoreProperties["keyPassword"] as String?
-                    storeFile = file(keystoreProperties["storeFile"] as String)
-                    storePassword = keystoreProperties["storePassword"] as String?
-                }
-            }
-
-            buildTypes {
-                getByName("release") {
-                    signingConfig = signingConfigs.getByName("release")
-                    isMinifyEnabled = false
-                    isShrinkResources = false
-                }
-            }
+            storeFile = file(keystoreProperties["storeFile"]!!)
+            storePassword = keystoreProperties["storePassword"] as String
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
         }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
+        }
+        getByName("debug") {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+
+    buildFeatures {
+        viewBinding = true
+    }
+}
 
 flutter {
     source = "../.."
 }
 
 dependencies {
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.21")
+    implementation("androidx.core:core-ktx:1.12.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

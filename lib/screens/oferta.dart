@@ -1,7 +1,29 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'ver_servicio_solicitado.dart';
+// 🔹 Nueva vista a la que redirige cuando se acepta una oferta
+class DetalleServicioPage extends StatelessWidget {
+  final int idServicio;
+
+  const DetalleServicioPage({super.key, required this.idServicio});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Servicio #$idServicio')),
+      body: Center(
+        child: Text(
+          'Detalles del servicio $idServicio',
+          style: const TextStyle(fontSize: 18),
+        ),
+      ),
+    );
+  }
+}
+
 class CronologiaOfertaPage extends StatefulWidget {
   final int idServicio;
   final int idUsuario; // cliente o solicitante
@@ -25,11 +47,24 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
   List<Map<String, dynamic>> ofertas = [];
   bool enviando = false;
   Map<String, dynamic> user = {};
+  Timer? _timer; // 🔹 Para el refresco automático
+
   @override
   void initState() {
     super.initState();
     getOfertas();
     _loadUserData();
+
+    // 🔹 Actualizar cada 30 segundos
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      getOfertas();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // 🔹 Detenemos el timer al salir
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -37,7 +72,6 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
     String? userData = prefs.getString('user');
     if (userData != null) {
       final userMap = json.decode(userData);
-
       setState(() {
         user = userMap;
       });
@@ -46,7 +80,6 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
 
   final String apiUrl = "https://manohogar.online/api/app_api.php";
 
-  /// 🔹 Consultar ofertas del servicio
   Future<void> getOfertas() async {
     try {
       final response = await http.post(
@@ -68,7 +101,6 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
     }
   }
 
-  /// 🔹 Registrar nueva oferta (solo especialista)
   Future<void> enviarOferta() async {
     if (_ofertaController.text.isEmpty) return;
 
@@ -83,7 +115,7 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
           "id_usuario": widget.idUsuario,
           "monto": _ofertaController.text,
           "especialista": user['id'],
-          "remitente": "especialista", // especialista
+          "remitente": "especialista",
         }),
       );
 
@@ -91,7 +123,7 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
         final jsonData = json.decode(response.body);
         if (jsonData["status"] == "ok") {
           _ofertaController.clear();
-          await getOfertas(); // refrescar lista
+          await getOfertas();
         } else {
           print("⚠️ Error registrar oferta: ${jsonData['message']}");
         }
@@ -103,7 +135,6 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
     }
   }
 
-  /// 🔹 Aceptar oferta (lo hace el cliente, no el especialista)
   Future<void> aceptarOferta(int idOferta) async {
     try {
       final response = await http.post(
@@ -115,7 +146,16 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         if (jsonData["status"] == "ok") {
-          getOfertas(); // refrescar lista
+          // 🔹 Redirigir a la nueva vista y eliminar la actual
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    VerServicioSolicitado(idServicio: widget.idServicio.toString())
+              ),
+            );
+          }
         } else {
           print("⚠️ Error aceptar oferta: ${jsonData['message']}");
         }
@@ -173,12 +213,11 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
                         Text("Remitente: ${oferta['remitente']}"),
                       ],
                     ),
-                    // El especialista no acepta, solo muestra
                     trailing: oferta["estado"] == "pendiente" &&
                         !esEspecialista
                         ? ElevatedButton(
-                      onPressed: () =>
-                          aceptarOferta(int.parse(oferta["id_oferta"].toString())),
+                      onPressed: () => aceptarOferta(
+                          int.parse(oferta["id_oferta"].toString())),
                       child: const Text("Aceptar"),
                     )
                         : null,
@@ -195,7 +234,7 @@ class _CronologiaOfertaPageState extends State<CronologiaOfertaPage> {
                 Expanded(
                   child: TextField(
                     controller: _ofertaController,
-                    enabled: !yaOferto, // 👈 si ya ofertó, no puede otra vez
+                    enabled: !yaOferto,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       hintText: yaOferto
