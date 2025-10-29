@@ -5,15 +5,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Lavadora App</string>
+	<string>Manohogar</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>com.manohogar.app</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>lavadora_app</string>
+	<string>Manohogar</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -28,12 +28,14 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -41,9 +43,29 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- 🔒 Requerimientos de privacidad -->
+	<key>NSCameraUsageDescription</key>
+	<string>Manohogar necesita acceder a la cámara para que los especialistas y usuarios puedan tomar fotos de documentos o trabajos realizados.</string>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Manohogar necesita acceder a tu galería para permitirte seleccionar y subir fotos de tu perfil o documentos.</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Manohogar necesita tu ubicación para conectar a los especialistas y clientes cercanos, y mejorar la experiencia de búsqueda de servicios.</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Manohogar usa tu ubicación incluso en segundo plano para notificarte sobre solicitudes o servicios cercanos en tiempo real.</string>
+
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Manohogar puede requerir acceso al micrófono para grabar notas de voz o videollamadas en los servicios (si están habilitadas).</string>
+
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Manohogar solicita permiso para mejorar la experiencia del usuario y mostrar contenido relevante basado en tu ubicación y preferencias.</string>
 </dict>
 </plist>
